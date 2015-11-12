@@ -5,7 +5,7 @@ import itertools
 import pickle
 
 print("Loading data...")
-data = pickle.load(open('data_proc_ccs.pkl', 'rb'))
+data = pickle.load(open('transfer_data_new_proc_ccs.pkl', 'rb'))
 col = pickle.load(open('col.pkl', 'rb'))
 print("Data loaded")
 
@@ -93,4 +93,4 @@ print("start ", datetime.datetime.now())
 newdata = mergeData(data)
 print("end ", datetime.datetime.now())
 print("Saving result into new_data_merge.pkl...")
-pickle.dump(newdata, open('new_data_merge.pkl', 'wb'))
+pickle.dump(newdata, open('new_data_merge_update.pkl', 'wb'))
