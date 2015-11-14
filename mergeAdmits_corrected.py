@@ -1,5 +1,7 @@
-# forgive me for not leaving blank lines in functions
-# I need to test in command line and Python will treat blank lines as end of function
+# This script merge the records for the patients which have same day readmits and readmit before 
+# discharge issue in their admit or discharge dates.
+# Took 5-6 minutes to process around 1 million records.
+
 import datetime
 import itertools
 import pickle
