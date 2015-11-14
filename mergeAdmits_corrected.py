@@ -1,4 +1,4 @@
-# This script merge the records for the patients which have same day readmits and readmit before 
+# This script merges the records for the patients which have same day readmits and readmit before 
 # discharge issue in their admit or discharge dates.
 # Took 5-6 minutes to process around 1 million records.
 
