@@ -75,4 +75,4 @@ print('writing in outfile with all zeros columns:'+outputFile)
 df.to_csv(outputFile+'_delallZeroes.csv', cols=df.columns.tolist(), index=False)
 
 end  = datetime.datetime.now()
-print(end - start)
+print(end - start)  
