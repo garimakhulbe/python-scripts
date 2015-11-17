@@ -12,6 +12,9 @@ line = f.readline().strip('\n').replace('"', '')
 items = line.split(',')
 
 # Creating hashmap for column names.
+# Columns are starting from X, oshpd_id......
+# so no need of doing col[item[i]] = i + 1
+
 col = dict()
 for i in range(len(items)):
   col[items[i]] = i;
