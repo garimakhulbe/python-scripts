@@ -3,13 +3,35 @@
 # Took 5-6 minutes to process around 1 million records.
 
 import datetime
-import itertools
 import pickle
+import sys
 
-print("Loading data...")
-data = pickle.load(open('transfer_data_new_proc_ccs.pkl', 'rb'))
-col = pickle.load(open('col.pkl', 'rb'))
-print("Data loaded")
+# Read input and output file names. args[0] is script name.
+inputFile = str(sys.argv[1])
+outputFile = str(sys.argv[2])
+f = open(inputFile, 'r')
+
+line = f.readline().strip('\n').replace('"', '')
+items = line.split(',')
+
+# Creating hashmap for column names.
+col = dict()
+for i in range(len(items)):
+  col[items[i]] = i;
+
+def parse(item):
+  if item.find('"') >= 0:
+    # it is a string, possibly a date or empty
+    return item.replace('"', '')
+  elif item == 'NA':
+    # it is NA without double quote
+    return 'NA'
+  elif item.find('.') >= 0:
+    # it is a decimal
+    return float(item)
+  else:
+    # it should be an integer, let it throw if it isn't
+    return int(item)
 
 def notNA(s):
   return s != 'NA' and s != ''
@@ -47,23 +69,23 @@ def mergeRows(rows):
   # merge primary diag
   diag_p = list(row[col['o_diag_p']] for row in rows if notNA(row[col['o_diag_p']])) + list(row[col['diag_p.y']] for row in rows if notNA(row[col['diag_p.y']]))
   result[col['diag_p.y']] = diag_p[-1] if len(diag_p) > 0 else 'NA'
-  result[col['o_diag_p']] = ','.join(str(diag) for diag in diag_p[:-1]) if len(diag_p) > 1 else 'NA'
+  result[col['o_diag_p']] = ':'.join(str(diag) for diag in diag_p[:-1]) if len(diag_p) > 1 else 'NA'
   # merge primary proc
   proc_p = list(row[col['o_proc_p']] for row in rows if notNA(row[col['o_proc_p']])) + list(row[col['proc_p']] for row in rows if notNA(row[col['proc_p']]))
   result[col['proc_p']] = proc_p[-1] if len(proc_p) > 0 else 'NA'
-  result[col['o_proc_p']] = ','.join(str(proc) for proc in proc_p[:-1]) if len(proc_p) > 1 else 'NA'
+  result[col['o_proc_p']] = ':'.join(str(proc) for proc in proc_p[:-1]) if len(proc_p) > 1 else 'NA'
   
   # typcare and sev_code need the latest admit
   # src columns need the earliest admit
   for att in ['typcare', 'sev_code']:
     atts = list(row[col['o' + att]] for row in rows if notNA(row[col['o' + att]])) + list(row[col[att]] for row in rows if notNA(row[col[att]]))
     result[col[att]] = atts[-1] if len(atts) > 0 else 'NA'
-    result[col['o' + att]] = ','.join(str(item) for item in atts[:-1]) if len(atts) > 1 else 'NA'  
+    result[col['o' + att]] = ':'.join(str(item) for item in atts[:-1]) if len(atts) > 1 else 'NA'  
 
   for att in ['srcsite', 'srcroute', 'srclicns']:
     atts = list(row[col[att]] for row in rows if notNA(row[col[att]])) + list(row[col['o' + att]] for row in rows if notNA(row[col['o' + att]]))
     result[col[att]] = atts[0] if len(atts) > 0 else 'NA'
-    result[col['o' + att]] = ','.join(str(item) for item in atts[1:]) if len(atts) > 1 else 'NA'  
+    result[col['o' + att]] = ':'.join(str(item) for item in atts[1:]) if len(atts) > 1 else 'NA'  
 
   return result
 
@@ -94,5 +116,24 @@ def mergeData(data):
 print("start ", datetime.datetime.now())
 newdata = mergeData(data)
 print("end ", datetime.datetime.now())
-print("Saving result into new_data_merge_updated.pkl...")
-pickle.dump(newdata, open('new_data_merge_updated.pkl', 'wb'))
+
+f = open(outputFile, 'w')
+items = list(col.items())
+items.sort(key = lambda item: item[1])
+f.write(','.join(['"' + item[0] + '"' for item in items]) + '\n')
+
+def serialize(item):
+  if item == 'NA':
+    # it is NA, just return NA without quotes
+    return 'NA'
+  elif isinstance(item, str):
+    # it is a string other than NA, possible empty, add double quotes
+    return '"' + item + '"'
+  else:
+    # it should be an number, convert to str without quotes
+    return str(item)
+
+f.writelines([(','.join([serialize(item) for item in row]) + '\n') for row in data])
+f.close()
+
+
