@@ -1,78 +1,90 @@
-import pandas as pd
-import numpy as np
+import pickle
 import sys
-import datetime
 
-start = datetime.datetime.now()
+# Read input and output file names. args[0] is script name.
+inputFile = str(sys.argv[1])
+outputFile = str(sys.argv[2])
+# inputFile = "test_final.csv"
+# outputFile = "final_output.csv"
+f = open(inputFile, 'r')
+
+line = f.readline().strip('\n').replace('"', '')
+items = line.split(',')
+
+# Creating hashmap for column names.
+col = dict()
+for i in range(len(items)):
+  col[items[i]] = i;
+
+def parse(item):
+  if item.find('"') >= 0:
+    # it is a string, possibly a date or empty
+    return item.replace('"', '')
+  elif item == 'NA':
+    # it is NA without double quote
+    return 'NA'
+  elif item.find('.') >= 0:
+    # it is a decimal
+    return float(item)
+  else:
+    # it should be an integer, let it throw if it isn't
+    return int(item)
+
+
+# below code will convert csv to python object
+data = []
+while (True):
+  line = f.readline()
+  if not line:
+    break
+  datum=[]
+  for item in line.strip('\n').split(','):
+    datum.append(parse(item));
+  data.append(datum)
+
+f.close()
 
 def notNA(s):
   return s != 'NA' and s != ''
 
 
-# Reading input values.
-print("reading input file...")
-print(sys.argv[1])
-
-inputFile =  str(sys.argv[1])
-outputFile = str(sys.argv[2])
-# Read csv 
-df_data = pd.read_csv(inputFile, low_memory=False)
-print('columns before adding DX and PR:'+str(len(df_data.columns)))
-
-a = np.zeros(shape=(len(df_data.index),670))
-b = np.zeros(shape=(len(df_data.index),231))
+for row in data:
+  for item in col.items():
+    if (item[0].find('odiag') >= 0 and notNA(row[item[1]])):
+      row[col['DXCCS_' + str(row[item[1]])]] = 1
 
 
-df_dxs = pd.DataFrame(a,columns=['DXCCS_'+str(i) for i in range(1,671)])
-df_prs = pd.DataFrame(b,columns=['PRCCS_'+str(i) for i in range(1,232)])
+# data = []
+# i = 0
+# while (i < 10):
+#   line = f.readline()
+#   if not line:
+#     break
+#   datum=[]
+#   for item in line.strip('\n').split(','):
+#     datum.append(parse(item));
+#   data.append(datum)
+#   i = i +1
 
-df =  pd.concat([df_data,df_dxs,df_prs], axis=1)
-print('rows:'+str(len(df.index)))
-df = df.drop(['o_diag_p', 'o_proc_p','osrcroute', 'osrcsite', 'osrclicns'], axis=1)
-print('columns after adding 671+231 columns:' + str(len(df.columns)))
-
-
-df_cols = df.columns.tolist()
-dxColumns = [ z for z in df_cols if ((z.find('odiag') >= 0) or (z.find('diag_p') >= 0)) ]
-prColumns = [ z for z in df_cols if ((z.find('oproc') >= 0) or (z.find('proc_p') >= 0)) ]
-
-df[dxColumns] = df[dxColumns].fillna(0)
-df[prColumns] = df[prColumns].fillna(0)
-
-df[dxColumns] = df[dxColumns].astype(int)
-df[prColumns] = df[prColumns].astype(int)
-
-# for i in range(0, len(df.index)):
-#   df.ix[i]['oproc15']
-#   type(df.ix[i][c])
-# for i in range(0, len(df.index)):
-#   print('------ row'+str(i))
-#   for c in dxColumns:
-#     print(df.ix[i][c])
-#     print(type(df.ix[i][c]))
-#     print(c)
-#     print(np.isfinite(df.ix[i][c]))
+# for item in col.items():
+#   item
 
 
-for i, row in df.iterrows():
-  print(i)
-  d = set(['DXCCS_'+str(row[c]) for c in dxColumns if row[c]!=0 ])
-  p = set(['PRCCS_'+str(row[c]) for c in prColumns if row[c]!=0 ])
-  l = d.union(p)
-  df.ix[i, l] = 1
+f = open(outputFile, 'w')
+items = list(col.items())
+items.sort(key = lambda item: item[1])
+f.write(','.join(['"' + item[0] + '"' for item in items]) + '\n')
 
-print('writing in outfile:'+outputFile)
-df.to_csv(outputFile+'.csv', cols=df.columns.tolist(), index=False)
+def serialize(item):
+  if item == 'NA':
+    # it is NA, just return NA without quotes
+    return 'NA'
+  elif isinstance(item, str):
+    # it is a string other than NA, possible empty, add double quotes
+    return '"' + item + '"'
+  else:
+    # it should be an number, convert to str without quotes
+    return str(item)
 
-data = df[df.columns[(df != 0).any()]]
-print(len(data.columns))
-f = open('Cols.txt', 'w')
-print('columns after removing all zeros columns:' + str(len(data.columns)))
-f.write(str(data.columns.tolist()))
+f.writelines([(','.join([serialize(item) for item in row]) + '\n') for row in data])
 f.close()
-
-print('writing in outfile with all zeros columns:'+outputFile)
-df.to_csv(outputFile+'_delallZeroes.csv', cols=df.columns.tolist(), index=False)
-
-end  = datetime.datetime.now()
-print(end - start)  
