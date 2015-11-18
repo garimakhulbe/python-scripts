@@ -1,9 +1,14 @@
 import pickle
 import sys
+import datetime
 
+
+start = datetime.datetime.now()
 # Read input and output file names. args[0] is script name.
 inputFile = str(sys.argv[1])
 outputFile = str(sys.argv[2])
+print(inputFile)
+print(outputFile)
 # inputFile = "test_final.csv"
 # outputFile = "final_output.csv"
 f = open(inputFile, 'r')
@@ -28,7 +33,7 @@ def parse(item):
     return float(item)
   else:
     # it should be an integer, let it throw if it isn't
-    return int(item)
+    return item
 
 
 # below code will convert csv to python object
@@ -44,13 +49,15 @@ while (True):
 
 f.close()
 
+print(len(data))
+
 def notNA(s):
   return s != 'NA' and s != ''
 
 
 for row in data:
   for item in col.items():
-    if (item[0].find('odiag') >= 0 and notNA(row[item[1]])):
+    if (((item[0].find('odiag') >= 0) or (item[0].find('diag_p') >= 0)) and notNA(row[item[1]])):
       row[col['DXCCS_' + str(row[item[1]])]] = 1
 
 
@@ -88,3 +95,6 @@ def serialize(item):
 
 f.writelines([(','.join([serialize(item) for item in row]) + '\n') for row in data])
 f.close()
+
+end  = datetime.datetime.now()
+print(end - start)  
