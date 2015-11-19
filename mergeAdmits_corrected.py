@@ -19,19 +19,6 @@ col = dict()
 for i in range(len(items)):
   col[items[i]] = i;
 
-def parse(item):
-  if item.find('"') >= 0:
-    # it is a string, possibly a date or empty
-    return item.replace('"', '')
-  elif item == 'NA':
-    # it is NA without double quote
-    return 'NA'
-  elif item.find('.') >= 0:
-    # it is a decimal
-    return float(item)
-  else:
-    # it should be an integer, let it throw if it isn't
-    return int(item)
 
 def notNA(s):
   return s != 'NA' and s != ''
